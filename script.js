@@ -1,16 +1,25 @@
-let a = fetch('https://twitter-backend-6yot.onrender.com/tweet/recent')
+let TweetOffset = 0;
+let runningCriticalCondition = false;
+
+function renderTweets(){
+if(runningCriticalCondition){
+  return;
+}
+runningCriticalCondition = true;
+  let a = fetch(`https://twitter-backend-6yot.onrender.com/tweet/recent?offset=${TweetOffset}`)
 
 a.then((res)=>{
-    return res.json();
+  return res.json();
 }).then((result)=>{
-    //console.log(result)
+  //console.log(result.data)
 
-    document.querySelector('.main-content').insertAdjacentHTML('beforebegin',result.data.map((ele)=>{
-        //console.log(ele.title)
+  TweetOffset = TweetOffset + result.data.length;
+
+    document.querySelector('.main-content').insertAdjacentHTML('afterbegin',result.data.map((ele)=>{
+        // console.log(ele)
         const date = new Date(ele.creationDatetime).toDateString()
         //console.log(date)
-        return `<div data-id=${ele._id} class="main-content">
-        <div  class="tweet-post">
+        return `<div id="${ele._id}" class="tweet-post">
           <div class="tweet-person-img">
             <img src="./images/user.jpg" alt="user">
           </div>
@@ -19,15 +28,15 @@ a.then((res)=>{
               <div class="user-info">
                 <p style="color: rgb(15,20,25);font-weight: 700;">Mayur Asati</p>
                 <p>@mayur27asati</p>
-                <p>2022 dec 19</p>
+                <p>${date}</p>
               </div>
             <div class="more">
-              <button data-id=${ele._id} class="tweet-edit">Edit</button>
-              <button data-id=${ele._id} class="tweet-del">Delete</button>
+              <button data-id="${ele._id}" class="tweet-edit">Edit</button>
+              <button data-id="${ele._id}" class="tweet-del">Delete</button>
               <svg viewBox="0 0 24 24" aria-hidden="true" class="r-4qtqp9 r-yyyyoo r-1xvli5t r-dnmrzs r-bnwqim r-1plcrui r-lrvibr r-1hdv0qi"><g><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></g></svg>
             </div>
             </div>
-            <div class="tweet-content">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Cupiditate atque porro modi soluta cumque labore consectetur officiis laborum sit tempora..</div>
+            <div id="span-${ele._id}" class="tweet-content">${ele.title}</div>
             <div class="tweet-img">
               <img src="./images/image-tweet.jpg" alt="image">
             </div>
@@ -46,18 +55,18 @@ a.then((res)=>{
               </div>
             </div>
           </div>
-        </div>
-
 
       </div>`
     }).join(""))
 
+  })
+  runningCriticalCondition = false;
+}
+renderTweets()
     document.addEventListener('click', async (e)=>{
         if(e.target.classList.contains('twt-btn')){
             
             const title = document.getElementById('post-text').value;
-           // console.log(title);
-
             const data = {
                 title : title,
                 text : 'hello dear',
@@ -67,7 +76,7 @@ a.then((res)=>{
             const twtResponce = await fetch('https://twitter-backend-6yot.onrender.com/tweet/create',{
                 method : 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                  'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data)
             })
@@ -78,9 +87,10 @@ a.then((res)=>{
                     alert(tweet.message);
                     return;
                 }
+                // console.log(tweet)
 
             document.getElementById('post-text').value = "";
-            alert(tweet.message)
+            alert(tweet.message);
             }
 
 
@@ -88,9 +98,8 @@ a.then((res)=>{
                 if(confirm("Are your sure to delete")){
 
                   const tweetId = e.target.getAttribute('data-id')
-
                   const data = {
-                    tweetId,
+                    tweetId : tweetId,
                     userId : '123',
                   }
 
@@ -107,9 +116,8 @@ a.then((res)=>{
                       alert(result.message);
                       return;
                   }
-
                   alert('Tweet Deleted Successfully');
-                  document.getElementById('data-id').remove()
+                  document.getElementById(tweetId).remove()
                     
                 }
 
@@ -121,6 +129,7 @@ a.then((res)=>{
               
               const ele = document.getElementById('span-' + tweetId)
               
+              //console.log(ele)
               const text = prompt('Enter New Tweet Text', ele.textContent)
 
               const data = {
@@ -145,10 +154,27 @@ a.then((res)=>{
                     return;
                 }
 
-                alert('Updated Successfully')
-
+                alert('Updated Successfully');
                 ele.innerText = text;
           }
         })
     
-})
+        // document.addEventListener('click',(e)=>{
+        //   if(e.target.classList.contains('show')){
+        //     renderTweets()
+        //   }
+        // })
+        window.addEventListener('scroll',()=>{
+          const {
+            scrollTop,
+            scrollHeight,
+            clientHeight
+          } = document.documentElement;
+
+          //console.log(scrollHeight,scrollTop,clientHeight)
+           if(scrollTop + clientHeight >= scrollHeight -20){
+            renderTweets()
+           }
+
+
+        })
